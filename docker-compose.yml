@@ -1,0 +1,50 @@
+version: '3.0'
+services:
+  web:
+    build: docker_web/nginx
+    container_name: stocks_web_container
+    environment:
+      - APACHE_RUN_USER=www-data
+    volumes:
+      - $PWD:${APP_PATH_CONTAINER}
+      - /app/vendor
+    ports:
+      - 8040:80
+    working_dir: ${APP_PATH_CONTAINER}
+    links:
+      - php
+    restart: unless-stopped
+  php:
+    build: docker_web/php
+    container_name: stocks_php_container
+    working_dir: ${APP_PATH_CONTAINER}
+    volumes:
+      - $PWD:${APP_PATH_CONTAINER}
+    ports:
+      - "9004:9000"
+    restart: unless-stopped
+  redis:
+    image: redis
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - "6379"
+  db:
+    build: docker_web/db
+    container_name: stocks_db_container
+    restart: unless-stopped
+    volumes:
+      - "./postgres-data:/var/lib/postgresql/data:delegated"
+      - $PWD:${APP_PATH_CONTAINER}:delegated
+    environment:
+      POSTGRES_PASSWORD: stocks
+      POSTGRES_USER: stocks
+      POSTGRES_DB: stocks
+    ports:
+      - "5556:5432"
+  adminer:
+    build: docker_web/adminer
+    container_name: stocks_adminer_container
+    restart: unless-stopped
+    ports:
+      - 8041:8080
